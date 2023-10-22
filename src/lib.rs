@@ -74,6 +74,10 @@ impl Picross {
             if end > possibility.len() {
                 return;
             }
+            if end < possibility.len() && possibility[end] == Cell::True {
+                skip += 1;
+                continue;
+            }
             let mut new_possibility = possibility.clone();
             for cell in new_possibility.iter_mut().skip(start).take(skip) {
                 if *cell == Cell::True {
@@ -89,7 +93,6 @@ impl Picross {
                 }
                 *cell = Cell::True;
             }
-            dbg!(&new_possibility);
             Self::dfs(hints, hint_idx + 1, end, possibilities, new_possibility);
             skip += 1;
         }
@@ -178,6 +181,7 @@ fn common_possibility(possibilities: &[Vec<Cell>]) -> Option<Vec<Cell>> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use Cell::*;
     #[test]
     fn test_take_col() {
         let v = vec![vec![1, 2, 3], vec![4, 5, 6]];
@@ -188,18 +192,18 @@ mod test {
     #[test]
     fn test_common_possibility() {
         let possibilities = vec![
-            vec![Cell::True, Cell::True, Cell::False, Cell::Empty],
-            vec![Cell::True, Cell::False, Cell::False, Cell::Empty],
-            vec![Cell::True, Cell::True, Cell::False, Cell::Empty],
+            vec![True, True, False, Empty],
+            vec![True, False, False, Empty],
+            vec![True, True, False, Empty],
         ];
         assert_eq!(
             common_possibility(&possibilities),
-            Some(vec![Cell::True, Cell::Empty, Cell::False, Cell::Empty])
+            Some(vec![True, Empty, False, Empty])
         );
-        let possibilities = vec![vec![Cell::True, Cell::True, Cell::False]];
+        let possibilities = vec![vec![True, True, False]];
         assert_eq!(
             common_possibility(&possibilities),
-            Some(vec![Cell::True, Cell::True, Cell::False])
+            Some(vec![True, True, False])
         );
         let possibilities = vec![];
         assert_eq!(common_possibility(&possibilities), None);
@@ -212,7 +216,7 @@ mod test {
         let col_hints = vec![vec![5], vec![5], vec![5], vec![5], vec![5]];
         let mut picross = Picross::new(width, height, row_hints, col_hints);
         picross.solve();
-        assert_eq!(picross.grid, vec![vec![Cell::True; 5]; 5]);
+        assert_eq!(picross.grid, vec![vec![True; 5]; 5]);
         assert_eq!(
             picross.to_string(),
             "⬜⬜⬜⬜⬜\n⬜⬜⬜⬜⬜\n⬜⬜⬜⬜⬜\n⬜⬜⬜⬜⬜\n⬜⬜⬜⬜⬜\n"
@@ -226,7 +230,7 @@ mod test {
         let col_hints = vec![vec![]; 5];
         let mut picross = Picross::new(width, height, row_hints, col_hints);
         picross.solve();
-        assert_eq!(picross.grid, vec![vec![Cell::False; 5]; 6]);
+        assert_eq!(picross.grid, vec![vec![False; 5]; 6]);
         assert_eq!(
             picross.to_string(),
             "XXXXX\nXXXXX\nXXXXX\nXXXXX\nXXXXX\nXXXXX\n"
@@ -242,7 +246,20 @@ mod test {
         picross.solve();
         assert_eq!(
             picross.to_string(),
-            "X⬜⬜⬜⬜\n⬜X⬜XX\nX.⬜⬜⬜\n⬜⬜X⬜⬜\n...⬜⬜\n"
+            "X⬜⬜⬜⬜\n⬜X⬜XX\nXX⬜⬜⬜\n⬜⬜X⬜⬜\nX⬜X⬜⬜\n"
         );
+    }
+
+    #[test]
+    fn test_dfs() {
+        let mut possibilities = vec![];
+        Picross::dfs(
+            &[3],
+            0,
+            0,
+            &mut possibilities,
+            vec![Empty, Empty, True, True, True],
+        );
+        assert_eq!(possibilities, vec![vec![False, False, True, True, True]]);
     }
 }
