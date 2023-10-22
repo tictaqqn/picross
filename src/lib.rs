@@ -65,7 +65,11 @@ impl Picross {
             return;
         }
         if hint_idx == hints.len() || start == possibility.len() {
-            possibilities.push(possibility);
+            if possibility.iter().filter(|&&c| c == Cell::True).count()
+                == hints.iter().sum::<usize>()
+            {
+                possibilities.push(possibility);
+            }
             return;
         }
         let mut skip = if hint_idx == 0 { 0 } else { 1 };
